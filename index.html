@@ -200,7 +200,7 @@
 <script>
 /* ===== 설정 ===== */
 const CONFIG = {
-  BUDGET_RATES_APPROVED: false,           // 노무사 승인 전 false: 약 20% 예산 가이드와 예시를 공개 화면에서 숨김
+  SHOW_BUDGET_GUIDE: true,                // 4대보험·퇴직급여 예산 가이드(최대 약 20%). 운영자 결정으로 공개 — 노무사 검토는 받지 않음. false면 안내 한 줄만 보이고 ?review=1에서만 비율이 보임
   GTM_ID: ''                              // 예: 'GTM-XXXXXXX'. 비우면 dataLayer.push·부모창 postMessage만 한다
 };
 
@@ -232,7 +232,7 @@ const qs = new URLSearchParams(location.search);
 const EMBED = qs.get('embed') === '1';
 const REVIEW = false;
 if (EMBED) document.body.classList.add('embed');
-if (REVIEW) $('#reviewBar').hidden = false;
+if (REVIEW && !CONFIG.SHOW_BUDGET_GUIDE) $('#reviewBar').hidden = false;
 
 const MIN26 = 10320, MIN27 = 10700, MAX_WAGE = 1000000;
 const PERIODS = [['day','1일'],['week','1주'],['week2','2주'],['month','1개월'],['month3','3개월'],['month6','6개월'],['year','1년']];
@@ -363,14 +363,14 @@ $('#reset').addEventListener('click', () => {
   isExample = true; render();
 });
 
-/* 4대보험·퇴직급여 예산 가이드 (노무사 승인 전에는 안내 한 줄만) */
+/* 4대보험·퇴직급여 예산 가이드 (SHOW_BUDGET_GUIDE가 false면 안내 한 줄만) */
 function budgetHTML() {
   const head = '<h2 id="budgetH">4대보험·퇴직급여까지 고려한다면?</h2>';
-  if (!(CONFIG.BUDGET_RATES_APPROVED || REVIEW))
+  if (!(CONFIG.SHOW_BUDGET_GUIDE || REVIEW))
     return head + '<p>시급이 오르면 사업주가 부담하는 보험료와 퇴직급여도 늘어날 수 있어요.</p>';
   $('#basisBudget').hidden = false;
   $('#basisBudget').textContent = '예산 가이드: 약 20%는 사업주 보험료 약 12%와 퇴직급여 적립 약 8.3%를 합친 계획용 비율이며 법정 요율이 아님(산재보험료율이 높은 업종 등은 달라질 수 있음). 퇴직급여는 원칙적으로 계속근로 1년 이상, 4주 평균 주 15시간 이상이 대상. 보험료율 자체의 인상분은 제외';
-  const ribbon = CONFIG.BUDGET_RATES_APPROVED ? '' : '<span class="ribbon">노무사 승인 전 · 비공개</span>';
+  const ribbon = CONFIG.SHOW_BUDGET_GUIDE ? '' : '<span class="ribbon">노무사 승인 전 · 비공개</span>';
   return ribbon + head +
     `<p>모두 적용되는 알바생이라면 임금 증가액에 <b class="bud">최대 약 20%</b>를 더해 예산을 잡아보세요.</p>
     <div class="ex2"><p class="exh">계산 예) 월 추가 임금이 5만 원이라면</p>
