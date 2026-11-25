@@ -1,0 +1,403 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2027년 최저시급 계산기 | 알바몬 사장님</title>
+<meta name="am-calc-version" content="v2-utility">
+<meta name="description" content="2027년 최저시급 10,700원. 현재 시급과 예상 근무기간을 입력하고 주휴수당을 포함한 추가 알바비와 증가율을 확인해 보세요.">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+  /* 토큰: 알바몬 사장님 블로그(blog.business.albamon.com)의 실제 테마 값에서 가져옴
+     accent #FF501B · surface #f6f6f6 · text #292929 · heading #1e293b · muted #415160 · radius 8px */
+  :root{
+    --accent:#FF501B; --accent-text:#D63E0F; --accent-soft:#FFF3ED;
+    --ink:#292929; --head:#1e293b; --muted:#415160; --faint:#6b7684;
+    --line:#e5e7eb; --field:#c9ced6; --surface:#f6f6f6; --err:#c62828; --r:8px;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:#fff;color:var(--ink);font-family:"IBM Plex Sans","Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif;font-size:15px;line-height:1.6}
+  .wrap{max-width:960px;margin:0 auto;padding:20px 16px 36px}
+  h1,h2,p,dl,dd{margin:0}
+  button,input,select{font:inherit;color:inherit}
+  a{color:inherit}
+  :focus-visible{outline:2px solid #1a73e8;outline-offset:2px;border-radius:4px}
+
+  /* 상단 */
+  .series{font-size:.75rem;font-weight:700;color:var(--accent-text)}
+  h1{font-size:1.5rem;line-height:1.3;color:var(--head);margin:2px 0 4px}
+  .sub{font-size:.9375rem;color:var(--muted)}
+  .rate{background:var(--accent-soft);border-radius:var(--r);padding:14px 16px;margin:14px 0 22px}
+  .rate .rr{display:flex;gap:16px}
+  .rate .rr>div{flex:1}
+  .rate .k{display:block;font-size:.8125rem;color:var(--muted)}
+  .rate b{font-size:1.375rem;line-height:1.3;color:var(--head);font-variant-numeric:tabular-nums}
+  .rate .now b{color:var(--accent-text)}
+  .rate .rn{font-size:.8125rem;color:var(--muted);margin-top:6px}
+  .rate .rn b{font-size:inherit;color:var(--accent-text)}
+
+  /* 레이아웃: 입력은 테두리 없이, 결과만 배경색 */
+  .grid{display:grid;grid-template-columns:minmax(0,1fr);gap:24px}
+  @media(min-width:760px){.grid{grid-template-columns:minmax(0,45fr) minmax(0,55fr);gap:32px;align-items:start}}
+  .sech{display:flex;align-items:baseline;gap:8px;margin:0 0 12px}
+  .sech h2,h2.p{font-size:1.125rem;line-height:1.3;color:var(--head)}
+  .sech .meta{font-size:.8125rem;color:var(--faint)}
+  .link{margin-left:auto;background:none;border:0;padding:0;font-size:.8125rem;color:var(--faint);text-decoration:underline;cursor:pointer}
+  .field{margin:0 0 14px;min-width:0}
+  .field label{display:block;font-size:.875rem;font-weight:600;color:var(--head);margin-bottom:6px}
+  .field label small{font-weight:400;font-size:.75rem;color:var(--faint);margin-left:4px}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:end}
+  .inp,.sel{height:46px;border:1px solid var(--field);border-radius:var(--r);background:#fff;width:100%}
+  .inp{display:flex;align-items:center;padding:0 12px}
+  .inp:focus-within,.sel:focus{border-color:var(--accent);box-shadow:0 0 0 2px #ffd9cc;outline:0}
+  .inp.bad{border-color:var(--err)}
+  .inp input{flex:1;min-width:0;border:0;outline:0;background:transparent;font-size:1.0625rem;font-weight:600;height:100%}
+  .inp .unit{color:var(--faint);margin-left:6px}
+  .sel{padding:0 34px 0 12px;font-size:1rem;font-weight:600;appearance:none;-webkit-appearance:none;cursor:pointer;
+    background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%236b7684' stroke-width='1.6'/%3E%3C/svg%3E") no-repeat right 12px center}
+  .sel:disabled{background-color:var(--surface);color:var(--faint);cursor:not-allowed}
+  .err{font-size:.8125rem;color:var(--err);margin-top:4px}
+  .weekinfo{font-size:.8125rem;color:var(--muted);min-height:1.4em;margin:-4px 0 22px}
+  .weekinfo b{color:var(--head)}
+  .periods{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+  .periods label{position:relative}
+  .periods input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer}
+  .periods span{display:flex;align-items:center;justify-content:center;height:40px;border:1px solid var(--field);border-radius:var(--r);font-size:.8125rem;font-weight:500;background:#fff;white-space:nowrap}
+  .periods input:checked+span{border-color:var(--accent);background:var(--accent-soft);color:var(--accent-text);font-weight:700}
+  .periods input:focus-visible+span{outline:2px solid #1a73e8;outline-offset:2px}
+  .pnote{font-size:.75rem;color:var(--faint);min-height:1.4em;margin-top:6px}
+
+  /* 결과 */
+  .result{background:var(--surface);border-radius:var(--r);padding:18px 16px;min-width:0}
+  .rh{font-size:.875rem;color:var(--muted)}
+  .rh .ex{color:var(--accent-text);font-weight:600;margin-left:6px}
+  .big{display:flex;align-items:baseline;flex-wrap:wrap;gap:2px 8px;margin:2px 0 14px}
+  .big b{font-size:2rem;line-height:1.2;font-weight:800;color:var(--accent-text);letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+  .big span{font-size:1rem;font-weight:700;color:var(--accent-text)}
+  .notice{font-size:.8125rem;background:#fff;border-radius:var(--r);padding:8px 12px;margin:0 0 14px;color:var(--head)}
+  .cmp{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:0 0 14px;padding:12px 0;border-top:1px solid #dcdfe4;border-bottom:1px solid #dcdfe4}
+  .cmp dt{font-size:.8125rem;color:var(--muted)}
+  .cmp dd{margin:0;font-size:1.125rem;font-weight:700;color:var(--head);font-variant-numeric:tabular-nums}
+  .cmp .n dd{color:var(--accent-text)}
+  .calcnote{font-size:.75rem;color:var(--faint);margin:0 0 4px}
+  table{width:100%;border-collapse:collapse;font-size:.8125rem;font-variant-numeric:tabular-nums}
+  caption{text-align:left;font-size:.75rem;color:var(--faint);padding:0 0 4px}
+  th,td{padding:7px 4px;border-bottom:1px solid var(--line);text-align:right}
+  th:first-child,td:first-child{text-align:left;padding-left:0}
+  thead th{font-weight:600;font-size:.75rem;color:var(--muted)}
+  tbody th{font-weight:600;text-align:left}
+  tr.tot td,tr.tot th{font-weight:800;border-bottom:0}
+  td.na{color:var(--faint)}
+  td.plus{color:var(--accent-text);font-weight:700}
+  .empty{color:var(--faint);text-align:center;min-height:300px;display:flex;align-items:center;justify-content:center}
+  details>summary{cursor:pointer;font-weight:600;font-size:.9375rem;color:var(--head);padding:12px 0;list-style:none;display:flex;justify-content:space-between;align-items:center}
+  details>summary::-webkit-details-marker{display:none}
+  details>summary::after{content:'+';font-size:1.25rem;font-weight:400;color:var(--faint)}
+  details[open]>summary::after{content:'−'}
+  .result details{border-top:1px solid #dcdfe4}
+  .how{margin:2px 0 4px}
+  .how ol{margin:10px 0 0;padding-left:18px;font-size:.8125rem;color:var(--muted)}
+  .how li{margin:0 0 4px}
+  .how b{color:var(--head)}
+  .how .fine{font-size:.75rem;color:var(--faint);margin-top:6px}
+
+  /* 하단 영역: 박스 없이 구분선만 */
+  section.blk{margin-top:32px}
+  section.blk>h2{font-size:1.125rem;color:var(--head);margin-bottom:6px}
+  .budget .ribbon{display:block;font-size:.6875rem;font-weight:700;color:var(--err);margin-bottom:2px}
+  .budget p{color:var(--muted)}
+  .budget .ex2{margin:10px 0 6px;max-width:420px}
+  .budget .ex2 .exh{font-size:.8125rem;color:var(--faint);margin-bottom:2px}
+  .budget .ex2 dl{border-top:1px solid var(--line)}
+  .budget .ex2 dl div{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+  .budget .ex2 dl div:last-child{font-weight:700;color:var(--head)}
+  .budget .cap{font-size:.75rem;color:var(--faint)}
+  .budget .bud{color:var(--accent-text)}
+  .budget .why{margin:8px 0 0;padding-left:16px;font-size:.8125rem;color:var(--muted)}
+  .budget .why li{margin:0 0 3px}
+  .budget .why b{color:var(--head)}
+  .budget .why a{color:var(--muted)}
+  .basis{font-size:.75rem;color:var(--faint);line-height:1.7}
+  .basis h2{font-size:.8125rem!important;color:var(--muted)!important;margin-bottom:4px!important}
+  .basis ul{margin:0;padding-left:16px}
+  .src{font-size:.75rem;color:var(--faint);line-height:1.8;margin-top:12px}
+  .src a{color:var(--faint)}
+  .review-bar{font-size:.75rem;color:var(--err);background:#fdecea;border-radius:var(--r);padding:6px 12px;margin:10px 0 0}
+
+  /* 임베드 모드: 제목·FAQ·출처·유의문구는 블로그 본문 텍스트로 둔다 */
+  body.embed #pageHead,body.embed #basis,body.embed #sources,body.embed .how ol,body.embed .how .fine,body.embed .hm{display:none}
+  body.embed .wrap{padding-top:4px}
+  body.embed .rate{margin-top:4px}
+  @media(max-width:360px){.periods span{font-size:.75rem}}
+</style>
+</head>
+<body>
+<main class="wrap">
+
+  <header id="pageHead">
+    <p class="series">알바몬 사장님 툴 01</p>
+    <h1>2027년 최저시급 계산기</h1>
+    <p class="sub">지금 지급하는 시급과 비교해 내년 알바비를 계산해 보세요.</p>
+  </header>
+  <p id="reviewBar" class="review-bar" hidden>내부 검토 화면 · 노무사 승인 전 항목(추가 예산 가이드)이 보여요. 공개 화면에는 보이지 않아요.</p>
+
+  <section class="rate" aria-label="최저시급">
+    <div class="rr">
+      <div><span class="k">2026년 최저시급</span><b>10,320원</b></div>
+      <div class="now"><span class="k">2027년 최저시급</span><b>10,700원</b></div>
+    </div>
+    <p class="rn">전년 대비 <b>380원 인상 (3.7%)</b> · 2027.01.01 적용</p>
+  </section>
+
+  <div class="grid">
+    <form id="form" novalidate onsubmit="return false">
+      <div class="sech"><h2>현재 근무조건</h2><span class="meta">알바생 1명 기준</span><button type="button" class="link" id="reset">초기화</button></div>
+
+      <div class="field">
+        <label for="wage">현재 시급 (주휴수당 제외)</label>
+        <div class="inp" id="wageBox"><input id="wage" inputmode="numeric" autocomplete="off" aria-describedby="wageErr"><span class="unit">원</span></div>
+        <div class="err" id="wageErr" role="alert"></div>
+      </div>
+
+      <div class="two">
+        <div class="field"><label for="hours">하루 근무시간<small>휴게시간 제외</small></label><select class="sel" id="hours"></select></div>
+        <div class="field"><label for="days">주 근무일수</label><select class="sel" id="days"></select></div>
+      </div>
+      <p class="weekinfo" id="weekInfo" aria-live="polite"></p>
+
+      <h2 class="p" id="perH" style="margin-bottom:8px">2027년 예상 근무기간</h2>
+      <div class="periods" role="radiogroup" aria-labelledby="perH" id="periods"></div>
+      <p class="pnote" id="periodNote" aria-live="polite"></p>
+    </form>
+
+    <section class="result" id="result" aria-live="polite"></section>
+  </div>
+
+  <section class="blk budget" id="budget" aria-labelledby="budgetH"></section>
+
+  <section class="blk basis" id="basis" aria-labelledby="basisH">
+    <h2 id="basisH">계산 기준</h2>
+    <ul>
+      <li>알바생 1명, 현재와 2027년 근무조건이 같고 매일 같은 시간을 일하는 주 5일 이내 근무 기준 (주 40시간 초과 미지원)</li>
+      <li>주휴수당: 4주 평균 주 15시간 이상, 소정근로일 개근, 통상근로자 주 5일·40시간 기준(주 근무시간 ÷ 5). 주 40시간은 고시의 월 209시간 적용</li>
+      <li>1일은 하루만 근무하는 경우(주휴 제외), 1주·2주는 연속 7일·14일 계약과 개근 가정, 1개월 이상은 월평균(365÷7÷12) 추정이며 선택 기간 모두 2027년 안으로 가정</li>
+      <li>세전 기본임금과 주휴수당만 계산하며 보험료, 퇴직급여, 연장·야간·휴일수당은 제외. 금액은 원 단위 반올림</li>
+      <li id="basisBudget" hidden></li>
+    </ul>
+  </section>
+
+  <section class="src" id="sources" aria-labelledby="srcH">
+    <h2 id="srcH" style="font-size:.8125rem;margin:0 0 2px;color:var(--muted)">출처</h2>
+    <a href="https://moel.go.kr/info/lawinfo/instruction/view.do?bbs_seq=20260800150" target="_blank" rel="noopener">고용노동부 2027년 적용 최저임금 고시</a> ·
+    <a href="https://www.minimumwage.go.kr/minWage/policy/decisionMain.do" target="_blank" rel="noopener">최저임금위원회 연도별 최저임금</a> ·
+    <a href="https://www.law.go.kr/LSW/lsLinkCommonInfo.do?chrClsCd=010202&lsJoLnkSeq=1029727865" target="_blank" rel="noopener">근로기준법 제18조</a> ·
+    <a href="https://law.go.kr/lsLinkCommonInfo.do?lsJoLnkSeq=1033294415" target="_blank" rel="noopener">근로자퇴직급여 보장법 제4조</a><br>
+    참고용 세전 예상치예요. 실제 주휴수당과 보험료는 근무형태와 가입 요건에 따라 달라질 수 있으니, 노무사나 알바몬 상담 등 전문가 확인을 권해요.
+  </section>
+</main>
+
+<script>
+/* ===== 설정 ===== */
+const CONFIG = {
+  BUDGET_RATES_APPROVED: false,           // 노무사 승인 전 false: 약 20% 예산 가이드와 예시를 공개 화면에서 숨김
+  GTM_ID: ''                              // 예: 'GTM-XXXXXXX'. 비우면 dataLayer.push·부모창 postMessage만 한다
+};
+
+/* ===== 계산 코어 (순수 함수, 개발 명세 §4) ===== */
+// <calc-core>
+function calculate({w,h,d,p}) {
+  const options={day:0,week:0,week2:0,month:1,month3:3,month6:6,year:12};
+  if (!Number.isSafeInteger(w) || w<10320 || !Number.isFinite(h) || h<0.5 || h>8 || !Number.isInteger(h*2) || !Object.hasOwn(options,p) || (p!=='day' && (!Number.isInteger(d)||d<1||d>5))) throw new Error('Invalid input');
+  const H=p==='day'?0:h*d, R=H>=15?H/5:0;
+  const F=H===40&&R===8?209/48:365/7/12;
+  let B,P;
+  if(p==='day'){ B=h; P=0; }
+  else if(p==='week'||p==='week2'){const k=p==='week'?1:2; B=H*k; P=R*k;}
+  else {B=H*F*options[p]; P=R*F*options[p];}
+  const target=Math.max(w,10700);
+  const breakdown=rate=>{const total=Math.round(rate*(B+P));const basic=Math.round(rate*B);if(!Number.isSafeInteger(total)) throw new Error('Amount out of range');return {basic,holiday:total-basic,total};};
+  const old=breakdown(w), next=breakdown(target);
+  const delta={basic:next.basic-old.basic,holiday:next.holiday-old.holiday,total:next.total-old.total};
+  return {target,H,R,B,P,old,next,delta,increasePct:(target-w)/w*100,F,mult:options[p]};
+}
+// </calc-core>
+
+/* ===== UI ===== */
+const $ = s => document.querySelector(s);
+const fmt = n => new Intl.NumberFormat('ko-KR').format(n);
+const fmtH = n => String(Number(n.toFixed(2)));
+const sign = n => n > 0 ? '+' + fmt(n) : fmt(n);
+const qs = new URLSearchParams(location.search);
+const EMBED = qs.get('embed') === '1';
+const REVIEW = false;
+if (EMBED) document.body.classList.add('embed');
+if (REVIEW) $('#reviewBar').hidden = false;
+
+const MIN26 = 10320, MIN27 = 10700, MAX_WAGE = 1000000;
+const PERIODS = [['day','1일'],['week','1주'],['week2','2주'],['month','1개월'],['month3','3개월'],['month6','6개월'],['year','1년']];
+const DEFAULTS = {wage:'10,320', hours:'4', days:'5', period:'month'};
+const PHRASE = {day:'1일', week:'1주', week2:'2주', month:'1개월', month3:'3개월', month6:'6개월', year:'1년'};
+let isExample = true;
+
+/* 분석 이벤트: 정확한 시급 원값은 보내지 않고 범주만 보낸다 */
+const sent = {};
+function track(name, params, once) {
+  if (once && sent[name]) return; sent[name] = 1;
+  const payload = Object.assign({event: name}, params || {});
+  try { (window.dataLayer = window.dataLayer || []).push(payload); } catch (e) {}
+  try { if (parent !== window) parent.postMessage({source:'am-min-wage-calc', event:'analytics', name, params: params || {}}, '*'); } catch (e) {}
+}
+if (CONFIG.GTM_ID) {
+  window.dataLayer = window.dataLayer || []; window.dataLayer.push({'gtm.start': Date.now(), event: 'gtm.js'});
+  const s = document.createElement('script'); s.async = true; s.src = 'https://www.googletagmanager.com/gtm.js?id=' + encodeURIComponent(CONFIG.GTM_ID); document.head.appendChild(s);
+}
+
+/* 입력 UI 생성 */
+let hopts = ''; for (let v = 0.5; v <= 8; v += 0.5) hopts += `<option value="${v}"${v===4?' selected':''}>${v}시간</option>`;
+$('#hours').innerHTML = hopts;
+$('#days').innerHTML = [1,2,3,4,5].map(n => `<option value="${n}"${n===5?' selected':''}>${n}일</option>`).join('');
+$('#periods').innerHTML = PERIODS.map(([k,l]) => `<label><input type="radio" name="period" value="${k}"${k==='month'?' checked':''}><span>${l}</span></label>`).join('');
+$('#wage').value = DEFAULTS.wage;
+const getPeriod = () => document.querySelector('input[name=period]:checked').value;
+
+/* 입력 읽기·검증 */
+function readInputs() {
+  const errs = {}; let w;
+  const wr = $('#wage').value.replace(/,/g,'').trim();
+  if (wr === '') errs.wage = '현재 시급을 입력해 주세요.';
+  else if (!/^\d+$/.test(wr)) errs.wage = '숫자(원 단위 정수)로 입력해 주세요.';
+  else { w = Number(wr);
+    if (w > MAX_WAGE) errs.wage = fmt(MAX_WAGE) + '원 이하로 입력해 주세요.';
+    else if (w < MIN26) errs.wage = '2026년 최저시급(' + fmt(MIN26) + '원)보다 낮은 시급은 계산하지 않아요. 수습 등 특례 미지원.'; }
+  return {w, h: Number($('#hours').value), d: Number($('#days').value), p: getPeriod(), errs};
+}
+
+/* 보조 문구 */
+function weekInfoHTML(inp, r) {
+  if (inp.p === 'day') return '<b>1일 근무</b> · 주휴수당 없음';
+  if (!r) return '';
+  return `<b>주 ${fmtH(r.H)}시간 근무</b> · ` + (r.R > 0 ? '주휴수당 포함 가정' : '주휴수당 미포함');
+}
+function periodNote(p) {
+  return {day: '1일 계약 종료 가정', week: '연속 7일 계약·개근 가정', week2: '연속 14일 계약·개근 가정'}[p] || '';
+}
+
+/* 결과 렌더 */
+function compareHTML(r) {
+  return `<dl class="cmp"><div><dt>현재 시급 기준</dt><dd>${fmt(r.old.total)}원</dd></div><div class="n"><dt>2027년 예상 임금</dt><dd>${fmt(r.next.total)}원</dd></div></dl>`;
+}
+function tableHTML(r, p) {
+  const hol = r.R > 0 && p !== 'day';
+  const row = (name, a, b, c, isTot, na) => na
+    ? `<tr><th scope="row">${name}</th><td class="na" colspan="3" style="text-align:right">미포함</td></tr>`
+    : `<tr class="${isTot?'tot':''}"><th scope="row">${name}</th><td>${fmt(a)}</td><td>${fmt(b)}</td><td class="${c>0?'plus':''}">${sign(c)}</td></tr>`;
+  return `<table><caption>단위: 원 · 세전</caption>
+    <thead><tr><th scope="col"></th><th scope="col">현재 시급 기준</th><th scope="col">2027년 기준</th><th scope="col">증가액</th></tr></thead>
+    <tbody>${row('기본임금', r.old.basic, r.next.basic, r.delta.basic)}${row('주휴수당', r.old.holiday, r.next.holiday, r.delta.holiday, false, !hol)}${row('합계', r.old.total, r.next.total, r.delta.total, true)}</tbody></table>`;
+}
+function formulaHTML(inp, r) {
+  const {w,h,d,p} = inp, L = [];
+  L.push(`시급 차이 = max(${fmt(MIN27)} − ${fmt(w)}, 0) = <b>${fmt(r.target - w)}원</b>`);
+  if (p === 'day') L.push(`유급시간 = 하루 근무 <b>${fmtH(h)}시간</b> (주휴 없음)`);
+  else {
+    L.push(`주 근무시간 = ${fmtH(h)}시간 × ${d}일 = <b>${fmtH(r.H)}시간</b>`);
+    L.push(r.R > 0 ? `주휴시간 = ${fmtH(r.H)}시간 ÷ 5 = <b>주 ${fmtH(r.R)}시간</b> (주 15시간 이상)` : `주휴시간 = <b>0시간</b> (주 15시간 미만)`);
+    if (p === 'week' || p === 'week2') { const k = p === 'week' ? 1 : 2; L.push(`유급시간 = (${fmtH(r.H)} + ${fmtH(r.R)}) × ${k}주 = <b>${fmtH(r.B + r.P)}시간</b>`); }
+    else if (r.H === 40 && r.R === 8) L.push(`유급시간 = 월 209시간(주 40시간 기준 고시 환산) × ${r.mult}개월 = <b>${fmtH(r.B + r.P)}시간</b>`);
+    else L.push(`유급시간 = (${fmtH(r.H)} + ${fmtH(r.R)}) × 4.345주(365÷7÷12) × ${r.mult}개월 ≈ <b>${fmtH(r.B + r.P)}시간</b>`);
+  }
+  L.push(`기본임금 증가액 ≈ ${fmt(r.next.basic)} − ${fmt(r.old.basic)} = <b>${fmt(r.delta.basic)}원</b>`);
+  if (r.R > 0 && p !== 'day') L.push(`주휴수당 증가액 ≈ ${fmt(r.next.holiday)} − ${fmt(r.old.holiday)} = <b>${fmt(r.delta.holiday)}원</b>`);
+  L.push(`합계 증가액 = <b>${fmt(r.delta.total)}원</b> · 증가율 = ${fmt(r.target - w)} ÷ ${fmt(w)} × 100 ≈ <b>${r.increasePct.toFixed(2)}%</b>`);
+  return `<ol>${L.map(x => `<li>${x}</li>`).join('')}</ol><p class="fine">원 단위 반올림 때문에 계산식과 1원 정도 차이가 날 수 있어요.</p>`;
+}
+function resultHTML(inp, r) {
+  const keep = inp.w >= MIN27;
+  const pct = r.delta.total === 0 ? '0.0%' : r.increasePct.toFixed(2) + '%';
+  return `
+    <p class="rh">${PHRASE[inp.p]} 동안 추가로 지급할 임금${isExample ? '<span class="ex">예시 근무조건</span>' : ''}</p>
+    <p class="big"><b>${r.delta.total > 0 ? '+' : ''}${fmt(r.delta.total)}원</b><span>(${pct})</span></p>
+    ${keep ? '<p class="notice">현재 시급이 2027년 최저시급 이상이에요. 최저임금 인상으로 시급을 추가로 올릴 필요는 없어요.</p>' : ''}
+    ${compareHTML(r)}
+    <p class="calcnote">세전 임금 기준 · 4대보험 및 퇴직급여 제외</p>
+    <details id="how"><summary>상세 내역<span class="hm"> 및 계산 방법</span></summary><div class="how">${tableHTML(r, inp.p)}${formulaHTML(inp, r)}</div></details>`;
+}
+const band = n => n === 0 ? '0' : n <= 50000 ? 'le50k' : n <= 200000 ? 'le200k' : 'gt200k';
+
+let started = false;
+function render() {
+  const inp = readInputs(), e = inp.errs;
+  $('#wageErr').textContent = e.wage || ''; $('#wageBox').classList.toggle('bad', !!e.wage);
+  $('#days').disabled = inp.p === 'day';
+  $('#periodNote').textContent = periodNote(inp.p);
+  let r = null;
+  if (!e.wage) { try { r = calculate(inp); } catch (x) { r = null; } }
+  $('#weekInfo').innerHTML = weekInfoHTML(inp, r);
+    const open = $('#how') && $('#how').open;
+  if (!r) { $('#result').innerHTML = '<div class="empty">현재 시급과 근무조건을 입력하면<br>결과가 나와요.</div>'; postHeightSoon(); return; }
+  $('#result').innerHTML = resultHTML(inp, r);
+  if (open) $('#how').open = true;
+  postHeightSoon();
+  $('#how').addEventListener('toggle', ev => { if (ev.target.open) track('calculator_formula_expand', {}, true); });
+  if (!isExample) track('calculator_result_view', {period: inp.p, weekly_hours_band: inp.p === 'day' ? 'day' : r.H < 15 ? 'lt15' : r.H < 30 ? '15to29' : '30to40', increase_band: band(r.delta.total)}, true);
+}
+
+/* 이벤트 연결 */
+function touch() { if (!started) { started = true; track('calculator_start', {}, true); } if (isExample) isExample = false; }
+$('#wage').addEventListener('input', ev => {
+  const el = ev.target, pos = el.selectionStart, before = el.value;
+  if (before.includes('.')) { touch(); render(); return; }   // 소수 입력은 숫자로 바꿔치기하지 않고 그대로 두어 오류 안내
+  const digitsBefore = before.slice(0, pos).replace(/\D/g, '').length;
+  const digits = before.replace(/\D/g, '');
+  el.value = digits ? fmt(Number(digits.slice(0, 12))) : (before.trim() === '' ? '' : before);
+  if (digits) { let c = 0, i = 0; for (; i < el.value.length && c < digitsBefore; i++) if (/\d/.test(el.value[i])) c++; el.setSelectionRange(i, i); }
+  touch(); render();
+});
+$('#hours').addEventListener('change', () => { touch(); render(); });
+$('#days').addEventListener('change', () => { touch(); render(); });
+$('#periods').addEventListener('change', () => { touch(); track('calculator_period_change', {period: getPeriod()}); render(); });
+$('#reset').addEventListener('click', () => {
+  $('#wage').value = DEFAULTS.wage; $('#hours').value = DEFAULTS.hours; $('#days').value = DEFAULTS.days;
+  document.querySelector(`input[name=period][value="${DEFAULTS.period}"]`).checked = true;
+  isExample = true; render();
+});
+
+/* 4대보험·퇴직급여 예산 가이드 (노무사 승인 전에는 안내 한 줄만) */
+function budgetHTML() {
+  const head = '<h2 id="budgetH">4대보험·퇴직급여까지 고려한다면?</h2>';
+  if (!(CONFIG.BUDGET_RATES_APPROVED || REVIEW))
+    return head + '<p>시급이 오르면 사업주가 부담하는 보험료와 퇴직급여도 늘어날 수 있어요.</p>';
+  $('#basisBudget').hidden = false;
+  $('#basisBudget').textContent = '예산 가이드: 약 20%는 사업주 보험료 약 12%와 퇴직급여 적립 약 8.3%를 합친 계획용 비율이며 법정 요율이 아님(산재보험료율이 높은 업종 등은 달라질 수 있음). 퇴직급여는 원칙적으로 계속근로 1년 이상, 4주 평균 주 15시간 이상이 대상. 보험료율 자체의 인상분은 제외';
+  const ribbon = CONFIG.BUDGET_RATES_APPROVED ? '' : '<span class="ribbon">노무사 승인 전 · 비공개</span>';
+  return ribbon + head +
+    `<p>모두 적용되는 알바생이라면 임금 증가액에 <b class="bud">최대 약 20%</b>를 더해 예산을 잡아보세요.</p>
+    <div class="ex2"><p class="exh">계산 예) 월 추가 임금이 5만 원이라면</p>
+      <dl><div><dt>추가 임금</dt><dd>${fmt(50000)}원</dd></div><div><dt>추가 인건비 예산 (× 1.2)</dt><dd>약 ${fmt(Math.round(50000 * 1.2))}원</dd></div></dl></div>
+    <p class="cap">위 결과의 추가 임금에 1.2를 곱하면 돼요.</p>
+    <ul class="why">
+      <li><b>비율이 달라지는 경우</b> 보험 가입 대상 여부(근로시간·근무기간), 업종(산재보험료율), 근속기간(퇴직급여는 1년 이상)</li>
+      <li><b>확인 방법</b> 우리 사업장 보험료율은 <a href="https://www.4insure.or.kr/" target="_blank" rel="noopener">4대사회보험 정보연계센터</a>와 근로복지공단(산재)에서 확인하고, 판단이 어려우면 노무사·세무사에게 문의하세요.</li>
+    </ul>`;
+}
+if ('IntersectionObserver' in window) {
+  const io = new IntersectionObserver(es => { if (es.some(x => x.isIntersecting)) { track('calculator_budget_guide_view', {}, true); io.disconnect(); } }, {threshold: .4});
+  io.observe($('#budget'));
+}
+
+$('#budget').innerHTML = budgetHTML();
+
+/* iframe 높이 자동 조절 */
+function postHeight() { try { if (parent !== window) parent.postMessage({source:'am-min-wage-calc', event:'resize', height: Math.ceil(document.body.getBoundingClientRect().height + 8)}, '*'); } catch (e) {} }
+function postHeightSoon() { postHeight(); setTimeout(postHeight, 150); setTimeout(postHeight, 500); }
+if ('ResizeObserver' in window) new ResizeObserver(postHeight).observe(document.body);
+document.addEventListener('toggle', postHeightSoon, true);   // 접기/펼치기
+window.addEventListener('load', postHeightSoon);
+window.addEventListener('resize', postHeightSoon);
+
+render();
+track('calculator_view', {embed: EMBED ? 1 : 0}, true);
+</script>
+</body>
+</html>
